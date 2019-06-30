@@ -1,0 +1,17 @@
+nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    background-color: #432
+}
+li {
+    display: inline-block;
+    height: 100%;
+    min-width: 60px;
+    padding: 0 15px;
+}
+li a {
+    color: white;
+    font-size: 22px;
+    text-decoration: none;
+}
