@@ -1,11 +1,8 @@
-/* .visualizer {
+.visualizer {
+    background-color: #130C0E;
     position: absolute;
-    top: 65px;
+    top: 60px;
     bottom: 0;
     left: 0;
     right: 0;
-    margin: auto;
-} */
-#svg {
-    background-color: #130C0E;
   }

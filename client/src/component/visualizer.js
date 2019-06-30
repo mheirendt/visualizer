@@ -1,50 +1,63 @@
 import React, { Component } from "react";
 import * as d3 from 'd3';
 import './visualizer.css';
+import { of, Subject, BehaviorSubject } from 'rxjs';
+import {debounceTime, takeUntil} from 'rxjs/operators';
 
 class Visualizer extends Component {
 
-
-    height = 0;
-    width = 0
+    unsubscribe = new Subject();
+    dimensionSubject = null;
     frequencyData = this.getFrequency();
     svg = null;
-    svgHeight = '300';
-    svgWidth = '1200';
-    barPadding = '1';
+    width = 0;
+    height = 0;
     colorScale = null;
     circleX = null;
     dots = null;
     timer = null;
 
     componentDidMount() {
+        this.dimensionSubject = new BehaviorSubject({
+            width: window.innerWidth,
+            height: window.innerHeight
+        })
         this.drawChart();
+        this.dimensionSubject.pipe(
+            takeUntil(this.unsubscribe),
+            debounceTime(500)
+        ).subscribe(() => {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.updateChartDimensions();
+        });
+        window.addEventListener("resize", () => this.dimensionSubject.next());
     }
 
     componentWillUnmount() {
         this.svg.remove();
         this.timer.stop();
+        this.unsubscribe.next();
+        this.unsubscribe.complete();
+        this.updateDimensions.complete();
+        window.removeEventListener('resize', this.updateDimensions);
     }
-
 
     drawChart() {
         var self = this;
-        this.height = window.innerHeight;
-        this.width = window.innerWidth;
-
-        this.colorScale = d3.scaleLinear()
+        self.colorScale = d3.scaleLinear()
             .domain([0, 150])
             .range(["#2c7bb6", "#d7191c"]);
 
-        this.circleX = d3.scaleLinear()
+        self.circleX = d3.scaleLinear()
             .domain([0, self.frequencyData.length])
             .range([0, self.width]);
 
-        this.svg = d3.select('#svg').append('svg')
+        self.svg = d3.select('#svg').append('svg')
             .attr('width', self.width)
             .attr('height', self.height);
 
-        this.dots = this.svg.selectAll('circle')
+        self.dots = self.svg.selectAll('circle')
             .data(self.frequencyData)
             .enter().append('circle')
             .attr('r', function (d) { return self.width / self.frequencyData.length / 2 + .3; })
@@ -53,21 +66,24 @@ class Visualizer extends Component {
             .attr('fill', function (d, i) { return self.colorScale(d); });
 
 
-        this.timer = d3.timer(() => {
-            self.frequencyData = this.getFrequency;
-            //   analyser.getByteFrequencyData(frequencyData);
+        self.timer = d3.timer(() => {
+            self.frequencyData = this.getFrequency();
 
-            this.svg.selectAll('circle')
+            self.svg.selectAll('circle')
                 .data(self.frequencyData)
                 .attr('cy', function (d) { return self.height / 2 - d; })
                 .attr('fill', function (d, i) { return self.colorScale(d); });
         });
     }
 
+    updateChartDimensions() {
+        this.svg.remove();
+        this.drawChart();
+    }
+
     getFrequency() {
         var result = [];
         for (var i = 0; i < 500; i++) {
-            // result.push(0);
             result.push(Math.floor(Math.random() * Math.floor(300)));
         }
         return result;
